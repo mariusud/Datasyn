@@ -17,8 +17,8 @@ def calculate_accuracy(X: np.ndarray, targets: np.ndarray, model: SoftmaxModel) 
     """
     # TODO: Implement this function (copy from last assignment)
     y = model.forward(X)
-    correct = np.isclose(targets,y,atol=0.5)
-    return np.sum(correct) / y.shape[0]
+    correct = y.argmax(axis=1) == targets.argmax(axis=1)
+    return np.mean(correct)
 
 
 class SoftmaxTrainer(BaseTrainer):
@@ -47,15 +47,12 @@ class SoftmaxTrainer(BaseTrainer):
         Returns:
             loss value (float) on batch
         """
-        # TODO: Implement this function (task 2c)
-
-
-        outputs = model.forward(X_batch)
-        model.backward(X_batch,outputs,Y_batch)
+        outputs = self.model.forward(X_batch)
+        self.model.backward(X_batch,outputs,Y_batch)
 
         #backpropagate error
-        for i, W in enumerate(model.ws):
-            model.ws[i] = W - self.learning_rate*model.grads[i]            
+        for i, W in enumerate(self.model.ws):
+            self.model.ws[i] = W - self.learning_rate*self.model.grads[i]            
 
         loss = cross_entropy_loss(Y_batch,outputs)
 

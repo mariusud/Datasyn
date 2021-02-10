@@ -12,6 +12,14 @@ def sigmoid(z):
     """The sigmoid function."""
     return 1.0/(1.0+np.exp(-z))
 
+def improved_sigmoid(z):
+    """The sigmoid function."""
+    return 1.7159*np.tanh(2.0*z/3.0)
+
+def improved_sigmoid_derivative(z):
+    """The sigmoid function."""
+    return 2.0*1.7159 / (3.0*(np.cosh(((2.0/3.0)*z))**2))
+
 def sigmoid_derivative(z):
     """The sigmoid derivative function."""
     return sigmoid(z)*(1-sigmoid(z))
@@ -77,7 +85,7 @@ class SoftmaxModel:
             prev = self.I
             for size in self.neurons_per_layer:
                 w_shape = (prev, size)
-                print("Initializing weight to shape:", w_shape)
+                print("Initializing improved weight to shape:", w_shape)
                 w = np.random.normal(0, 1/np.sqrt(prev),w_shape)
                 self.ws.append(w)
                 prev = size
@@ -98,10 +106,16 @@ class SoftmaxModel:
         self.activations = list()
 
     def activation_function(self, z):
-        return sigmoid(z)
+        if self.use_improved_sigmoid:
+            return improved_sigmoid(z)
+        else:
+            return sigmoid(z)
 
     def activation_function_derivative(self,z):
-        return sigmoid_derivative(z)
+        if self.use_improved_sigmoid:
+            return improved_sigmoid_derivative(z)
+        else:
+            return sigmoid_derivative(z)
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         """
@@ -137,9 +151,6 @@ class SoftmaxModel:
         assert targets.shape == outputs.shape,\
             f"Output shape: {outputs.shape}, targets: {targets.shape}"
         # A list of gradients.
-        # For example, self.grads[0] will be the gradient for the first hidden layer
-
-
         self.grads = [np.zeros(w.shape) for w in self.ws]
 
         # Initialize error of output layer
