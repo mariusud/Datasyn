@@ -16,8 +16,9 @@ def calculate_accuracy(X: np.ndarray, targets: np.ndarray, model: SoftmaxModel) 
         Accuracy (float)
     """
     # TODO: Implement this function (copy from last assignment)
-    accuracy = 0
-    return accuracy
+    y = model.forward(X)
+    correct = np.isclose(targets,y,atol=0.5)
+    return np.sum(correct) / y.shape[0]
 
 
 class SoftmaxTrainer(BaseTrainer):
@@ -48,9 +49,15 @@ class SoftmaxTrainer(BaseTrainer):
         """
         # TODO: Implement this function (task 2c)
 
-        loss = 0
 
-        loss = cross_entropy_loss(Y_batch, logits)  # sol
+        outputs = model.forward(X_batch)
+        model.backward(X_batch,outputs,Y_batch)
+
+        #backpropagate error
+        for i, W in enumerate(model.ws):
+            model.ws[i] = W - self.learning_rate*model.grads[i]            
+
+        loss = cross_entropy_loss(Y_batch,outputs)
 
         return loss
 
@@ -68,6 +75,7 @@ class SoftmaxTrainer(BaseTrainer):
         """
         # NO NEED TO CHANGE THIS FUNCTION
         logits = self.model.forward(self.X_val)
+
         loss = cross_entropy_loss(self.Y_val, logits)
 
         accuracy_train = calculate_accuracy(
@@ -86,15 +94,18 @@ if __name__ == "__main__":
     momentum_gamma = .9  # Task 3 hyperparameter
     shuffle_data = True
 
+    early_stop = True
+
     # Settings for task 3. Keep all to false for task 2.
     use_improved_sigmoid = False
     use_improved_weight_init = False
     use_momentum = False
-
     # Load dataset
     X_train, Y_train, X_val, Y_val = utils.load_full_mnist()
-    X_train = pre_process_images(X_train)
-    X_val = pre_process_images(X_val)
+    mean = np.mean(X_train)
+    std = np.std(X_train)
+    X_train = pre_process_images(X_train, mean, std)
+    X_val = pre_process_images(X_val,mean,std)
     Y_train = one_hot_encode(Y_train, 10)
     Y_val = one_hot_encode(Y_val, 10)
     # Hyperparameters
@@ -105,7 +116,7 @@ if __name__ == "__main__":
         use_improved_weight_init)
     trainer = SoftmaxTrainer(
         momentum_gamma, use_momentum,
-        model, learning_rate, batch_size, shuffle_data,
+        model, learning_rate, batch_size, shuffle_data, early_stop,
         X_train, Y_train, X_val, Y_val,
     )
     train_history, val_history = trainer.train(num_epochs)
@@ -136,3 +147,4 @@ if __name__ == "__main__":
     plt.ylabel("Accuracy")
     plt.legend()
     plt.savefig("task2c_train_loss.png")
+    plt.show()

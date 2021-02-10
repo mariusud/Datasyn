@@ -1,6 +1,6 @@
 import numpy as np
 import utils
-
+from tqdm import tqdm
 
 class BaseTrainer:
 
@@ -75,7 +75,9 @@ class BaseTrainer:
         )
 
         global_step = 0
-        for epoch in range(num_epochs):
+        best_loss = 1
+        count = 0
+        for epoch in tqdm(range(num_epochs)):
             train_loader = utils.batch_loader(
                 self.X_train, self.Y_train, self.batch_size, shuffle=self.shuffle_dataset)
             for X_batch, Y_batch in iter(train_loader):
@@ -96,12 +98,9 @@ class BaseTrainer:
                         count = 0
                     else:
                         count +=1
-                        if count >= 10 and self.early_stop:
+                        if count >= 50 and self.early_stop:
                             print("Early stopping at ", global_step, "epoch ", epoch)
                             return train_history, val_history
-
-
-
 
                 global_step += 1
         return train_history, val_history

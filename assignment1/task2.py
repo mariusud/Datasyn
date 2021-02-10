@@ -56,6 +56,7 @@ class LogisticTrainer(BaseTrainer):
         """
         # NO NEED TO CHANGE THIS FUNCTION
         logits = self.model.forward(self.X_val)
+        print("vals",self.X_val.shape, Y_val.shape)
         loss = cross_entropy_loss(Y_val, logits)
 
         accuracy_train = calculate_accuracy(
