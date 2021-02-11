@@ -6,7 +6,7 @@ import numpy as np
 
 if __name__ == "__main__":
     # hyperparameters DO NOT CHANGE IF NOT SPECIFIED IN ASSIGNMENT TEXT
-    num_epochs = 50
+    num_epochs = 1
     learning_rate = .1
     batch_size = 32
     neurons_per_layer = [64, 10]
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         num_epochs)
 
     # PLOT
-
+    plt.figure(figsize=(20, 12))
     plt.subplot(1, 2, 1)
     utils.plot_loss(train_history["loss"], "Task 2 Model", npoints_to_average=10)
     utils.plot_loss(train_history_momentum["loss"], "Added Momentum model", npoints_to_average=10)
