@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from task2a import pre_process_images, one_hot_encode, SoftmaxModel
 from task2 import SoftmaxTrainer
 import numpy as np
+plt.style.use('seaborn-white')
 
 if __name__ == "__main__":
     # hyperparameters DO NOT CHANGE IF NOT SPECIFIED IN ASSIGNMENT TEXT
