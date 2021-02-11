@@ -12,9 +12,9 @@ if __name__ == "__main__":
     neurons_per_layer = [64, 10]
     momentum_gamma = .9  # Task 3 hyperparameter
     shuffle_data = True
-    early_stop = False
-    use_improved_sigmoid = True
-    use_improved_weight_init = True
+    early_stop = True
+    use_improved_sigmoid = False
+    use_improved_weight_init = False
     use_momentum = False
 
     # Load dataset
@@ -38,35 +38,90 @@ if __name__ == "__main__":
     )
     train_history, val_history = trainer.train(num_epochs)
 
-    # Example created in assignment text - Comparing with and without shuffling.
-    # YOU CAN DELETE EVERYTHING BELOW!
-    shuffle_data = False
-    use_improved_sigmoid = True
-    use_improved_weight_init = True
-    model_no_shuffle = SoftmaxModel(
+    ## RUN WITH MOMENTUM
+    use_momentum = True
+    model_momentum = SoftmaxModel(
         neurons_per_layer,
         use_improved_sigmoid,
         use_improved_weight_init)
-    trainer_shuffle = SoftmaxTrainer(
+    trainer_momentum = SoftmaxTrainer(
         momentum_gamma, use_momentum,
-        model_no_shuffle, learning_rate, batch_size, shuffle_data, early_stop,
+        model_momentum, learning_rate, batch_size, shuffle_data, early_stop,
         X_train, Y_train, X_val, Y_val,
     )
-    train_history_no_shuffle, val_history_no_shuffle = trainer_shuffle.train(
+    train_history_momentum, val_history_momentum = trainer_momentum.train(
         num_epochs)
-    shuffle_data = True
+
+
+    ## RUN WITH IMPROVED SIGMOID
+    use_momentum = False
+    use_improved_sigmoid = True
+    model_sigmoid = SoftmaxModel(
+        neurons_per_layer,
+        use_improved_sigmoid,
+        use_improved_weight_init)
+    trainer_sigmoid = SoftmaxTrainer(
+        momentum_gamma, use_momentum,
+        model_sigmoid, learning_rate, batch_size, shuffle_data, early_stop,
+        X_train, Y_train, X_val, Y_val,
+    )
+    train_history_sigmoid, val_history_sigmoid = trainer_sigmoid.train(
+        num_epochs)
+
+    ## RUN WITH IMPROVED WEIGHT
+    use_improved_sigmoid = False
+    use_improved_weight_init = True
+
+    model_weight = SoftmaxModel(
+        neurons_per_layer,
+        use_improved_sigmoid,
+        use_improved_weight_init)
+    trainer_weight = SoftmaxTrainer(
+        momentum_gamma, use_momentum,
+        model_weight, learning_rate, batch_size, shuffle_data, early_stop,
+        X_train, Y_train, X_val, Y_val,
+    )
+    train_history_weight, val_history_weight = trainer_weight.train(
+        num_epochs)
+
+
+    ## FINAL RUN
+    use_momentum = True
+    use_improved_sigmoid = True
+    use_improved_weight_init = True
+    model_final = SoftmaxModel(
+        neurons_per_layer,
+        use_improved_sigmoid,
+        use_improved_weight_init)
+    trainer_final = SoftmaxTrainer(
+        momentum_gamma, use_momentum,
+        model_final, learning_rate, batch_size, shuffle_data, early_stop,
+        X_train, Y_train, X_val, Y_val,
+    )
+    train_history_final, val_history_final = trainer_final.train(
+        num_epochs)
+
+    # PLOT
 
     plt.subplot(1, 2, 1)
-    utils.plot_loss(train_history["loss"],
-                    "Task 2 Model", npoints_to_average=10)
-    utils.plot_loss(
-        train_history_no_shuffle["loss"], "Task 2 Model - No dataset shuffling", npoints_to_average=10)
+    utils.plot_loss(train_history["loss"], "Task 2 Model", npoints_to_average=10)
+    utils.plot_loss(train_history_momentum["loss"], "Added Momentum model", npoints_to_average=10)
+    utils.plot_loss(train_history_sigmoid["loss"], "Improved sigmoid function", npoints_to_average=10)
+    utils.plot_loss(train_history_weight["loss"], "Imrpoved weight init", npoints_to_average=10)
+    utils.plot_loss(train_history_final["loss"], "All improvements included", npoints_to_average=10)
+
+
     plt.ylim([0, .4])
     plt.subplot(1, 2, 2)
     plt.ylim([0.85, .99])
+
+
     utils.plot_loss(val_history["accuracy"], "Task 2 Model")
-    utils.plot_loss(
-        val_history_no_shuffle["accuracy"], "Task 2 Model - No Dataset Shuffling")
+    utils.plot_loss(val_history_momentum["accuracy"], "Added Momentum")
+    utils.plot_loss(val_history_sigmoid["accuracy"], "Improved sigmoid function")
+    utils.plot_loss(val_history_weight["accuracy"], "Improved weight init")
+    utils.plot_loss(val_history_final["accuracy"], "All improvements included")
+    
     plt.ylabel("Validation Accuracy")
     plt.legend()
     plt.savefig("task3.png")

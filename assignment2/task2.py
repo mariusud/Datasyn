@@ -51,8 +51,13 @@ class SoftmaxTrainer(BaseTrainer):
         self.model.backward(X_batch,outputs,Y_batch)
 
         #backpropagate error
+
         for i, W in enumerate(self.model.ws):
-            self.model.ws[i] = W - self.learning_rate*self.model.grads[i]            
+            if self.use_momentum:
+                self.previous_grads[i] = (1-self.momentum_gamma)*self.model.grads[i] + self.momentum_gamma*self.previous_grads[i]
+                self.model.ws[i] = W - self.learning_rate*self.previous_grads[i]            
+            else:
+                self.model.ws[i] = W - self.learning_rate*self.model.grads[i]            
 
         loss = cross_entropy_loss(Y_batch,outputs)
 
