@@ -7,7 +7,7 @@ plt.style.use('seaborn-white')
 
 if __name__ == "__main__":
     # hyperparameters DO NOT CHANGE IF NOT SPECIFIED IN ASSIGNMENT TEXT
-    num_epochs = 1
+    num_epochs = 50
     learning_rate = .1
     batch_size = 32
     neurons_per_layer = [64, 10]
