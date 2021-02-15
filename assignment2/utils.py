@@ -4,6 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def plot_function(function, title="sigmoid"):
+    '''
+    Taken from https://www.kaggle.com/moriano/a-showcase-of-how-relus-can-speed-up-the-learning
+    '''
+    x = np.arange(-7, 7, 0.01)
+    y = function(x)
+    
+    plt.plot(x, y)
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title(title)
+    plt.show()
+
+
 def batch_loader(
         X: np.ndarray, Y: np.ndarray,
         batch_size: int, shuffle=False,
