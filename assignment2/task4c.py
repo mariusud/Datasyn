@@ -1,5 +1,7 @@
 import numpy as np
 import utils
+import matplotlib.pyplot as plt
+
 from task2a import one_hot_encode, pre_process_images, SoftmaxModel, gradient_approximation_test
 plt.style.use('seaborn-white')
 
@@ -13,7 +15,9 @@ if __name__ == "__main__":
         f"Expected the vector to be [0,0,0,1,0,0,0,0,0,0], but got {Y}"
 
     X_train, Y_train, *_ = utils.load_full_mnist()
-    X_train = pre_process_images(X_train)
+    mean = np.mean(X_train)
+    std = np.std(X_train)
+    X_train = pre_process_images(X_train, mean, std)
     Y_train = one_hot_encode(Y_train, 10)
     assert X_train.shape[1] == 785,\
         f"Expected X_train to have 785 elements per image. Shape was: {X_train.shape}"

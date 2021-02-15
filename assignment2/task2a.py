@@ -128,7 +128,7 @@ class SoftmaxModel:
         # HINT: For peforming the backward pass, you can save intermediate activations in varialbes in the forward pass.
         # such as self.hidden_layer_ouput = ...
         self.activations = [X] 
-        for i in range(len(self.ws)-1): # exlude last
+        for i in range(len(self.ws)-1):
             #predict  layer
             z = self.activations[i].dot(self.ws[i]) # z_j = weights @ x
             #activate  layer
