@@ -70,7 +70,7 @@ if __name__ == "__main__":
         num_epochs)
 
     ## RUN WITH IMPROVED WEIGHT
-    use_improved_sigmoid = True
+    use_improved_sigmoid = False
     use_improved_weight_init = True
 
     model_weight = SoftmaxModel(
@@ -108,10 +108,10 @@ if __name__ == "__main__":
     utils.plot_loss(train_history["loss"], "Task 2 Model", npoints_to_average=10)
     utils.plot_loss(train_history_momentum["loss"], "Added Momentum model", npoints_to_average=10)
     utils.plot_loss(train_history_sigmoid["loss"], "Improved sigmoid function", npoints_to_average=10)
-    utils.plot_loss(train_history_weight["loss"], "Imrpoved weight init", npoints_to_average=10)
+    utils.plot_loss(train_history_weight["loss"], "Improved weight init", npoints_to_average=10)
     utils.plot_loss(train_history_final["loss"], "All improvements included", npoints_to_average=10)
-
     plt.legend()
+
     plt.xlabel("Number of Training Steps")
     plt.ylabel("Cross Entropy Loss - Average")
     plt.ylim([0, .4])
