@@ -4,9 +4,19 @@ import utils
 from torch import nn
 from dataloaders import load_cifar10
 from trainer import Trainer, compute_loss_and_accuracy
+import torch
+from torchviz import make_dot
+from collections import OrderedDict
+class Mish(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        #inlining this saves 1 second per epoch (V100 GPU) vs having a temp x and then returning x(!)
+        return x *(torch.tanh(nn.functional.softplus(x)))
 
 
-class ExampleModel(nn.Module):
+class ConvModel2(nn.Module):
 
     def __init__(self,
                  image_channels,
@@ -21,35 +31,49 @@ class ExampleModel(nn.Module):
         num_filters = 32  # Set number of filters in first conv layer
         self.num_classes = num_classes
         # Define the convolutional layers
+
         self.feature_extractor = nn.Sequential(
+            # Conv layer 1
             nn.Conv2d(
                 in_channels=image_channels,
                 out_channels=num_filters,
-                kernel_size=5,
+                kernel_size=3,
                 stride=1,
-                padding=2
+                padding=1
             ),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2,stride=2),  
-            nn.Conv2d(in_channels=num_filters,out_channels=64, kernel_size=5,stride=1,padding=2),  
-            nn.ReLU(),
+            Mish(),
+            nn.BatchNorm2d(num_filters),
             nn.MaxPool2d(kernel_size=2,stride=2),
-            nn.Conv2d(in_channels=64,out_channels=128, kernel_size=5,stride=1,padding=2),  
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2,stride=2)
+
+            # conv layer 2
+            nn.Conv2d(in_channels=num_filters,out_channels=64, kernel_size=3,stride=1,padding=1),  
+            Mish(),
+            nn.MaxPool2d(kernel_size=2,stride=2),
+
+            #conv layer 3
+            nn.Conv2d(in_channels=64,out_channels=128, kernel_size=3,stride=1,padding=1),  
+            Mish(),
+            nn.MaxPool2d(kernel_size=2,stride=2),
+
+            #conv layer 4
+            nn.Conv2d(in_channels=128,out_channels=1024, kernel_size=3,stride=1,padding=1),  
+            Mish(),
+            nn.MaxPool2d(kernel_size=2,stride=2),
         )
 
         # The output of feature_extractor will be [batch_size, num_filters, 16, 16]
-        self.num_output_features = 128*4*4 #convoluted to 128 channels, maxpooled to 4x4 imgs
+        self.num_output_features = 256*4*4 #convoluted to 128 channels, maxpooled to 4x4 imgs
         # Initialize our last fully connected layer
         # Inputs all extracted features from the convolutional layers
         # Outputs num_classes predictions, 1 for each class.
         # There is no need for softmax activation function, as this is
         # included with nn.CrossEntropyLoss
         self.classifier = nn.Sequential(
-            nn.Linear(self.num_output_features,64),
+            nn.Linear(self.num_output_features,1024),
             nn.ReLU(),
-            nn.Linear(64, num_classes)
+            nn.Linear(1024,512),
+            nn.ReLU(),
+            nn.Linear(512, num_classes)
         )
 
     def forward(self, x):
@@ -86,7 +110,7 @@ def create_plots(trainer: Trainer, name: str):
     utils.plot_loss(trainer.train_history["accuracy"], label="Training Accuracy")
     
     plt.legend()
-    plt.savefig(plot_path.joinpath(f"{name}_plot.png"))
+    plt.savefig(plot_path.joinpath(f"{name}_model2_plot.png"))
     plt.show()
 
 
@@ -97,9 +121,9 @@ if __name__ == "__main__":
     epochs = 10
     batch_size = 64
     learning_rate = 5e-2
-    early_stop_count = 4
+    early_stop_count = 10
     dataloaders = load_cifar10(batch_size)
-    model = ExampleModel(image_channels=3, num_classes=10)
+    model = ConvModel2(image_channels=3, num_classes=10)
     trainer = Trainer(
         batch_size,
         learning_rate,
@@ -110,3 +134,14 @@ if __name__ == "__main__":
     )
     trainer.train()
     create_plots(trainer, "task2")
+
+    # http://www.bnikolic.co.uk/blog/pytorch-detach.html
+
+    _,_,dataloader_test = dataloaders
+    for i, (X_batch, Y_batch) in enumerate(dataloader_test):
+        X_batch = utils.to_cuda(X_batch)
+        Y_batch = utils.to_cuda(Y_batch)
+        print(X_batch.shape)
+        y = model(X_batch)
+        make_dot(y,params=dict(model.named_parameters())).render("attached", format="png")
+        break

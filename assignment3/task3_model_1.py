@@ -4,9 +4,10 @@ import utils
 from torch import nn
 from dataloaders import load_cifar10
 from trainer import Trainer, compute_loss_and_accuracy
+import torch
 
 
-class ExampleModel(nn.Module):
+class ConvModel1(nn.Module):
 
     def __init__(self,
                  image_channels,
@@ -25,18 +26,24 @@ class ExampleModel(nn.Module):
             nn.Conv2d(
                 in_channels=image_channels,
                 out_channels=num_filters,
-                kernel_size=5,
+                kernel_size=3,
                 stride=1,
-                padding=2
+                padding=1
             ),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2,stride=2),  
-            nn.Conv2d(in_channels=num_filters,out_channels=64, kernel_size=5,stride=1,padding=2),  
-            nn.ReLU(),
+            nn.BatchNorm2d(num_filters),
             nn.MaxPool2d(kernel_size=2,stride=2),
-            nn.Conv2d(in_channels=64,out_channels=128, kernel_size=5,stride=1,padding=2),  
+            nn.Dropout(p=0.1),
+            nn.Conv2d(in_channels=num_filters,out_channels=64, kernel_size=3,stride=1,padding=1),  
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2,stride=2)
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2,stride=2),
+            nn.Dropout(p=0.1),
+            nn.Conv2d(in_channels=64,out_channels=128, kernel_size=3,stride=1,padding=1),  
+            nn.ReLU(),
+            nn.BatchNorm2d(128),
+            nn.MaxPool2d(kernel_size=2,stride=2),
+            nn.Dropout(p=0.1)
         )
 
         # The output of feature_extractor will be [batch_size, num_filters, 16, 16]
@@ -62,6 +69,7 @@ class ExampleModel(nn.Module):
         layer1 = self.feature_extractor(x)
         features = layer1.view(-1, self.num_output_features)
         out = self.classifier(features)
+        out 
         expected_shape = (batch_size, self.num_classes)
         assert out.shape == (batch_size, self.num_classes),\
             f"Expected output of forward pass to be: {expected_shape}, but got: {out.shape}"
@@ -86,7 +94,7 @@ def create_plots(trainer: Trainer, name: str):
     utils.plot_loss(trainer.train_history["accuracy"], label="Training Accuracy")
     
     plt.legend()
-    plt.savefig(plot_path.joinpath(f"{name}_plot.png"))
+    plt.savefig(plot_path.joinpath(f"{name}model1_plot.png"))
     plt.show()
 
 
@@ -97,9 +105,9 @@ if __name__ == "__main__":
     epochs = 10
     batch_size = 64
     learning_rate = 5e-2
-    early_stop_count = 4
+    early_stop_count = 10
     dataloaders = load_cifar10(batch_size)
-    model = ExampleModel(image_channels=3, num_classes=10)
+    model = ConvModel1(image_channels=3, num_classes=10)
     trainer = Trainer(
         batch_size,
         learning_rate,
