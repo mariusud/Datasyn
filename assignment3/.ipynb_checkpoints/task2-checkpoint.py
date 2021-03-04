@@ -4,18 +4,9 @@ import utils
 from torch import nn
 from dataloaders import load_cifar10
 from trainer import Trainer, compute_loss_and_accuracy
-import torch
-
-class Mish(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        #inlining this saves 1 second per epoch (V100 GPU) vs having a temp x and then returning x(!)
-        return x *(torch.tanh(nn.functional.softplus(x)))
 
 
-class ConvModel1(nn.Module):
+class ExampleModel(nn.Module):
 
     def __init__(self,
                  image_channels,
@@ -31,55 +22,35 @@ class ConvModel1(nn.Module):
         self.num_classes = num_classes
         # Define the convolutional layers
         self.feature_extractor = nn.Sequential(
-            
-            #layer 1
             nn.Conv2d(
                 in_channels=image_channels,
                 out_channels=num_filters,
-                kernel_size=3,
+                kernel_size=5,
                 stride=1,
-                padding=1
+                padding=2
             ),
-            nn.BatchNorm2d(num_filters),
-            Mish(),
-            nn.Conv2d(in_channels=num_filters,out_channels=64, kernel_size=3,stride=1,padding=1),  
-            Mish(),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2,stride=2),  
+            nn.Conv2d(in_channels=num_filters,out_channels=64, kernel_size=5,stride=1,padding=2),  
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2,stride=2),
-
-            #layer 2
-            nn.Conv2d(in_channels=64,out_channels=128, kernel_size=3,stride=1,padding=1),  
-            nn.BatchNorm2d(128),
-            Mish(),
-            nn.Conv2d(in_channels=128,out_channels=128, kernel_size=3,stride=1,padding=1),  
-            Mish(),
-            nn.MaxPool2d(kernel_size=2,stride=2),
-
-
-            #layer 3
-            nn.Conv2d(in_channels=128,out_channels=256, kernel_size=3,stride=1,padding=1),  
-            nn.BatchNorm2d(256),
-            Mish(),
-            nn.Conv2d(in_channels=256,out_channels=256, kernel_size=3,stride=1,padding=1),  
-            Mish(),
-            nn.MaxPool2d(kernel_size=2,stride=2),
-
+            nn.Conv2d(in_channels=64,out_channels=128, kernel_size=5,stride=1,padding=2),  
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2,stride=2)
         )
 
         # The output of feature_extractor will be [batch_size, num_filters, 16, 16]
-        self.num_output_features = 256*4*4 #convoluted to 128 channels, maxpooled to 4x4 imgs
+        self.num_output_features = 128*4*4 #convoluted to 128 channels, maxpooled to 4x4 imgs
         # Initialize our last fully connected layer
         # Inputs all extracted features from the convolutional layers
         # Outputs num_classes predictions, 1 for each class.
         # There is no need for softmax activation function, as this is
         # included with nn.CrossEntropyLoss
         self.classifier = nn.Sequential(
-            nn.Linear(self.num_output_features,1024),
-            Mish(),
-            nn.Linear(1024,1024),
-            Mish(),
-            nn.Linear(1024, num_classes),
+            nn.Linear(self.num_output_features,64),
+            nn.ReLU(),
+            nn.Linear(64, num_classes)
         )
-
 
     def forward(self, x):
         """
@@ -91,7 +62,6 @@ class ConvModel1(nn.Module):
         layer1 = self.feature_extractor(x)
         features = layer1.view(-1, self.num_output_features)
         out = self.classifier(features)
-        out 
         expected_shape = (batch_size, self.num_classes)
         assert out.shape == (batch_size, self.num_classes),\
             f"Expected output of forward pass to be: {expected_shape}, but got: {out.shape}"
@@ -114,11 +84,9 @@ def create_plots(trainer: Trainer, name: str):
     plt.title("Accuracy")
     utils.plot_loss(trainer.validation_history["accuracy"], label="Validation Accuracy")
     utils.plot_loss(trainer.train_history["accuracy"], label="Training Accuracy")
-
-    print(trainer.train_history["accuracy"].popitem(last=True), " train acc" )
-    print(trainer.train_history["loss"].popitem(last=True), " train loss" )
+    
     plt.legend()
-    plt.savefig(plot_path.joinpath(f"{name}_final_.png"))
+    plt.savefig(plot_path.joinpath(f"{name}_plot.png"))
     plt.show()
 
 
@@ -128,10 +96,10 @@ if __name__ == "__main__":
     utils.set_seed(0)
     epochs = 10
     batch_size = 64
-    learning_rate = 5e-4 # 5e-4?
-    early_stop_count = 10
+    learning_rate = 5e-2
+    early_stop_count = 4
     dataloaders = load_cifar10(batch_size)
-    model = ConvModel1(image_channels=3, num_classes=10)
+    model = ExampleModel(image_channels=3, num_classes=10)
     trainer = Trainer(
         batch_size,
         learning_rate,
